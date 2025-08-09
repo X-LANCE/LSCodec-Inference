@@ -1,3 +1,6 @@
+# MIT License
+# Copyright (c) 2025 Yiwei Guo
+
 # build prompt.scp file using feats.scp and utt2prompt. 
 # Just a two-stage indexing procedure
 

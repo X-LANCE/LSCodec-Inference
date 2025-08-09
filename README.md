@@ -18,7 +18,7 @@ docker run -it -v /path/to/vec2wav2.0:/workspace cantabilekwok511/vec2wav2.0:v0.
 ```
 
 ## Checkpoints
-Checkpoints can be downloaded from [this path](). You can use this script to automatically download them:
+Checkpoints can be downloaded from [HuggingFace](https://huggingface.co/cantabile-kwok/lscodec_50hz/tree/main) or [Modelscope](https://modelscope.cn/models/CantabileKwok/lscodec-50hz/summary). You can use this script to automatically download them:
 ```
 bash download_ckpt.sh
 ```

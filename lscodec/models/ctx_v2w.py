@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+# MIT License
+# Copyright (c) 2025 Yiwei Guo
 
 import torch
 from typing import Union

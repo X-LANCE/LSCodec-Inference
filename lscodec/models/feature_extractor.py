@@ -1,3 +1,16 @@
+# Copyright (c) Facebook, Inc. and its affiliates.
+# All rights reserved.
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+
+# Portions of this code are a modification of the fairseq project.
+# The original source code can be found at:
+# https://github.com/facebookresearch/fairseq/blob/d13e14a800bb588e5a77fb4e551f554ff9b24a72/fairseq/models/wav2vec/wav2vec.py
+#
+# Copyright (c) 2025 Yiwei Guo
+# Licensed under the MIT license.
+
 import math
 
 import torch.nn as nn

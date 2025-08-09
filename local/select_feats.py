@@ -1,3 +1,6 @@
+# MIT License
+# Copyright (c) 2025 Yiwei Guo
+
 from kaldiio import ReadHelper, WriteHelper
 import sys
 from tqdm import tqdm

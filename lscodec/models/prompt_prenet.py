@@ -1,3 +1,6 @@
+# MIT License
+# Copyright (c) 2025 Yiwei Guo
+
 import math
 
 import torch.nn as nn

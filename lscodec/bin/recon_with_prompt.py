@@ -4,6 +4,12 @@
 # Copyright 2019 Tomoki Hayashi
 #  MIT License (https://opensource.org/licenses/MIT)
 
+# MIT License
+# Copyright (c) 2025 Yiwei Guo
+# This file is based on ParallelWaveGAN (https://github.com/kan-bayashi/ParallelWaveGAN). 
+# Above is the original copyright notice.
+
+
 """Decode with trained Parallel WaveGAN Generator."""
 
 import argparse

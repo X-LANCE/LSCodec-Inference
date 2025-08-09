@@ -1,3 +1,6 @@
+# MIT License
+# Copyright (c) 2025 Yiwei Guo
+
 import sys
 
 f_num_frames = sys.argv[1]

@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
+# Copyright 2025 Yiwei Guo
+#  Licensed under MIT
 
 """Network related utility tools."""
 # Retrieved from https://github.com/espnet/espnet/blob/master/espnet/nets/pytorch_backend/nets_utils.py
+
 import logging
 from typing import Dict
 

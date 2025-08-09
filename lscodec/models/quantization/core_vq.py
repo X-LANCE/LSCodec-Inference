@@ -382,6 +382,10 @@ class ResidualVectorQuantization(nn.Module):
 
 
 class GroupVectorQuantization(nn.Module):
+    """Group vector quantization implementation.
+    This is a simple wrapper around multiple VectorQuantization modules,
+    where each module is responsible for quantizing a specific group of dimensions.
+    """
     def __init__(self, *, num_quantizers, init_codebook=None, **kwargs):
         super().__init__()
         if (init_codebook is not None) and (len(init_codebook) > 0):

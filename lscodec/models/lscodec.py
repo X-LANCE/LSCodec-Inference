@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
+# MIT License
+# Copyright (c) 2025 Yiwei Guo
 
 import torch
 from typing import Union
 
 from lscodec.utils import crop_seq
-# from lscodec.models.hifigan import HiFiGANGenerator
 from lscodec.models.quantization.core_vq import GroupVectorQuantization
 from lscodec.models.fairseq_modules.fp32_group_norm import Fp32GroupNorm
 from lscodec.models.feature_extractor import LSCodecEncoder
 from lscodec.models.prompt_prenet import ConvPromptPrenet
-from lscodec.models.hifigan import HiFiGANGenerator
 import logging
 
 

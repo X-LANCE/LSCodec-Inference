@@ -5,15 +5,15 @@ echo -e "\033[0;33m===========================\033[0m"
 echo -e "\033[0;33mCreating directory pretrained/ for pretrained models...\033[0m"
 mkdir -p pretrained/
 
-echo -e "\033[0;33mDownloading pretrained models from huggingface using wget...\033[0m"
-echo -e "\033[0;33mIf this fails, please download manually from the links below and place them in the pretrained/ directory.\033[0m"
+echo -e "\033[0;33mDownloading pretrained models from huggingface using huggingface-cli. If you do not have this command, please install using 'pip install \"huggingface_hub[cli]\"'.\033[0m"
+echo -e "\033[0;33mIf you do not have access to huggingface, we also support modelscope.\033[0m"
+echo -e "\033[0;33mPlease open this script and change the next command to modelscope. It will require you to have run 'pip install modelscope'.\033[0m"
 echo -e "\033[0;33m===========================\033[0m"
 
-wget -O pretrained/codebook.npy https://huggingface.co/cantabile-kwok/lscodec_50hz/resolve/main/codebook.npy?download=true
-wget -O pretrained/lscodec_encoder.pt https://huggingface.co/cantabile-kwok/lscodec_50hz/resolve/main/lscodec_encoder.pt?download=true
-wget -O pretrained/lscodec_vocoder.pt https://huggingface.co/cantabile-kwok/lscodec_50hz/resolve/main/lscodec_vocoder.pt?download=true
-wget -O pretrained/encoder_config.yml https://huggingface.co/cantabile-kwok/lscodec_50hz/resolve/main/encoder_config.yml?download=true
-wget -O pretrained/vocoder_config.yml https://huggingface.co/cantabile-kwok/lscodec_50hz/resolve/main/vocoder_config.yml?download=true
+# Normally, we use the huggingface-cli to download the models.
+huggingface-cli download cantabile-kwok/lscodec_50hz --local-dir pretrained/
+# If you want to use modelscope instead, uncomment the following line:
+# modelscope download --model CantabileKwok/lscodec-50hz --local_dir pretrained/
 
 echo -e "\033[0;33m===========================\033[0m"
 echo -e "\033[0;33mFinished downloading pretrained LSCodec models.\033[0m"

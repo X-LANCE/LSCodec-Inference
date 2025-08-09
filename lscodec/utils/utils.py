@@ -3,6 +3,10 @@
 # Copyright 2019 Tomoki Hayashi
 #  MIT License (https://opensource.org/licenses/MIT)
 
+# Copyright 2025 Yiwei Guo
+# Portions of this code are a modification of the ParallelWaveGAN project (https://github.com/kan-bayashi/ParallelWaveGAN).
+# Licensed under the MIT license.
+
 """Utility functions."""
 
 import fnmatch

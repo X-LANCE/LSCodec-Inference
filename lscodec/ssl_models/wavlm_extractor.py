@@ -1,5 +1,6 @@
 # Copyright 2024 Yiwei Guo
 #  Licensed under Apache 2.0
+# This file is a direct copy from vec2wav2.0 (https://github.com/cantabile-kwok/vec2wav2.0)
 
 """Extract VQ indexes using WavLM model (from microsoft UniLM)"""
 
