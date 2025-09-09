@@ -59,23 +59,10 @@ def main():
         help="directory to save generated speech.",
     )
     parser.add_argument(
-        "--checkpoint",
+        '--pretrained-dir',
         type=str,
-        required=True,
-        help="checkpoint file to be loaded.",
-    )
-    parser.add_argument(
-        "--wavlm-path",
-        type=str,
-        default="pretrained/WavLM-Large.pt",
-        help="path to WavLM checkpoint.",
-    )
-    parser.add_argument(
-        "--config",
-        default=None,
-        type=str,
-        help="yaml format configuration file. if not explicitly provided, "
-        "it will be searched in the checkpoint directory. (default=None)",
+        default='pretrained',
+        help='directory to save pretrained models. Should contain WavLM-Large.pt, lscodec_vocoder.pt, vocoder_config.yml',
     )
     parser.add_argument(
         "--verbose",
@@ -108,12 +95,13 @@ def main():
         os.makedirs(args.outdir)
 
     # load config
-    if args.config is None:
-        dirname = os.path.dirname(args.checkpoint)
-        args.config = os.path.join(dirname, "config.yml")
-    with open(args.config) as f:
+    config_path = os.path.join(args.pretrained_dir, "vocoder_config.yml")
+    checkpoint_path = os.path.join(args.pretrained_dir, "lscodec_vocoder.pt")
+    wavlm_path = os.path.join(args.pretrained_dir, "WavLM-Large.pt")
+    with open(config_path) as f:
         config = yaml.load(f, Loader=yaml.Loader)
     config.update(vars(args))
+    config['vq_codebook'] = os.path.join(args.pretrained_dir, "codebook.npy")  # overwrite
 
     # check arguments
     if args.feats_scp is None:
@@ -126,8 +114,8 @@ def main():
     else:
         device = torch.device("cpu")
         logging.info("Using CPU.")
-    model = load_vocoder(checkpoint=args.checkpoint, config=config)
-    logging.info(f"Loaded model parameters from {args.checkpoint}.")
+    model = load_vocoder(checkpoint=checkpoint_path, config=config)
+    logging.info(f"Loaded model parameters from {checkpoint_path}.")
     model.backend.remove_weight_norm()
     model = model.eval().to(device)
 
@@ -153,7 +141,7 @@ def main():
     total_cnt = len(list(feats_scp.keys()))
     logging.info(f"The number of features to be decoded = {total_cnt}.")
 
-    wavlm = WavLMExtractor(checkpoint=args.wavlm_path, device=device)
+    wavlm = WavLMExtractor(checkpoint=wavlm_path, device=device)
     
     with torch.no_grad(), tqdm(feats_scp, desc="[decode]", total=total_cnt) as pbar:
         for idx, utt_id in enumerate(pbar, 1):
@@ -166,10 +154,12 @@ def main():
                 prompt_audio = librosa.resample(prompt_audio, orig_sr=prompt_sr, target_sr=16000)
 
             c = torch.tensor(c).to(device)  # (L, D)
-            # prompt_audio = 
+
             prompt = wavlm.extract(prompt_audio).unsqueeze(0)  # (1, L', D')
 
             vqidx = c.long()
+            if config.get("repeat_input_tokens", False):
+                vqidx = vqidx.repeat_interleave(2, dim=0)
             vqvec = torch.cat([feat_codebook[i](vqidx[:, i]) for i in range(feat_codebook_numgroups)], dim=-1).unsqueeze(0)  # (1, L, D)
 
             # generate

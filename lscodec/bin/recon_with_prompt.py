@@ -57,37 +57,43 @@ def main():
         required=True,
         help="directory to save generated speech.",
     )
+    # parser.add_argument(
+    #     "--encoder-checkpoint",
+    #     type=str,
+    #     default="pretrained/lscodec_encoder.pt",
+    #     help="checkpoint file to be loaded.",
+    # )
+    # parser.add_argument(
+    #     "--encoder-config",
+    #     default='pretrained/encoder_config.yml',
+    #     type=str,
+    #     help="yaml format configuration file. if not explicitly provided, "
+    #     "it will be searched in the checkpoint directory. (default=None)",
+    # )
+    # parser.add_argument(
+    #     "--vocoder-checkpoint",
+    #     type=str,
+    #     default="pretrained/lscodec_vocoder.pt",
+    #     help="checkpoint file to be loaded.",
+    # )
+    # parser.add_argument(
+    #     "--vocoder-config",
+    #     default='pretrained/vocoder_config.yml',
+    #     type=str,
+    #     help="yaml format configuration file. if not explicitly provided, "
+    #     "it will be searched in the checkpoint directory. (default=None)",
+    # )
+    # parser.add_argument(
+    #     "--wavlm-path",
+    #     type=str,
+    #     default="pretrained/WavLM-Large.pt",
+    #     help="path to WavLM checkpoint.",
+    # )
     parser.add_argument(
-        "--encoder-checkpoint",
+        "--pretrained-dir",
         type=str,
-        default="pretrained/lscodec_encoder.pt",
-        help="checkpoint file to be loaded.",
-    )
-    parser.add_argument(
-        "--encoder-config",
-        default='pretrained/encoder_config.yml',
-        type=str,
-        help="yaml format configuration file. if not explicitly provided, "
-        "it will be searched in the checkpoint directory. (default=None)",
-    )
-    parser.add_argument(
-        "--vocoder-checkpoint",
-        type=str,
-        default="pretrained/lscodec_vocoder.pt",
-        help="checkpoint file to be loaded.",
-    )
-    parser.add_argument(
-        "--vocoder-config",
-        default='pretrained/vocoder_config.yml',
-        type=str,
-        help="yaml format configuration file. if not explicitly provided, "
-        "it will be searched in the checkpoint directory. (default=None)",
-    )
-    parser.add_argument(
-        "--wavlm-path",
-        type=str,
-        default="pretrained/WavLM-Large.pt",
-        help="path to WavLM checkpoint.",
+        default="pretrained/",
+        help="directory to save pretrained model. (default=None). It will need to contain WavLM-Large.pt, lscodec_encoder.pt, lscodec_vocoder.pt, encoder_config.yml, vocoder_config.yml and codebook.npy",
     )
     parser.add_argument(
         "--verbose",
@@ -119,20 +125,21 @@ def main():
     if not os.path.exists(args.outdir):
         os.makedirs(args.outdir)
 
-    # load config
-    if args.encoder_config is None:
-        dirname = os.path.dirname(args.encoder_checkpoint)
-        args.encoder_config = os.path.join(dirname, "config.yml")
-    with open(args.encoder_config) as f:
+    # load encoder config
+    encoder_config_path = os.path.join(args.pretrained_dir, "encoder_config.yml")
+    encoder_checkpoint_path = os.path.join(args.pretrained_dir, "lscodec_encoder.pt")
+    with open(encoder_config_path) as f:
         encoder_config = yaml.load(f, Loader=yaml.Loader)
     encoder_config.update(vars(args))
-    # load vocoderconfig
-    if args.vocoder_config is None:
-        dirname = os.path.dirname(args.vocoder_checkpoint)
-        args.vocoder_config = os.path.join(dirname, "config.yml")
-    with open(args.vocoder_config) as f:
+    encoder_config['pretrain_codebook'] = os.path.join(args.pretrained_dir, "codebook.npy")  # overwrite
+    
+    # load vocoder config
+    vocoder_config_path = os.path.join(args.pretrained_dir, "vocoder_config.yml")
+    vocoder_checkpoint_path = os.path.join(args.pretrained_dir, "lscodec_vocoder.pt")
+    with open(vocoder_config_path) as f:
         vocoder_config = yaml.load(f, Loader=yaml.Loader)
     vocoder_config.update(vars(args))
+    vocoder_config['vq_codebook'] = os.path.join(args.pretrained_dir, "codebook.npy")  # overwrite
 
     # check arguments
     if args.wav_scp is None or args.prompt_wav_scp is None:
@@ -163,12 +170,12 @@ def main():
     else:
         device = torch.device("cpu")
         logging.info("Using CPU.")
-    model = load_model(encoder_config, args.encoder_checkpoint)
-    logging.info(f"Loaded encoder parameters from {args.encoder_checkpoint}.")
+    model = load_model(encoder_config, encoder_checkpoint_path)
+    logging.info(f"Loaded encoder parameters from {encoder_checkpoint_path}.")
     model = model.eval().to(device)
 
-    vocoder = load_vocoder(vocoder_config, args.vocoder_checkpoint)
-    logging.info(f"Loaded vocoder parameters from {args.vocoder_checkpoint}.")
+    vocoder = load_vocoder(vocoder_config, vocoder_checkpoint_path)
+    logging.info(f"Loaded vocoder parameters from {vocoder_checkpoint_path}.")
     vocoder = vocoder.eval().to(device)
     # load vq codebook
     feat_codebook = torch.tensor(np.load(vocoder_config["vq_codebook"], allow_pickle=True)).to(device)  # (V, D)
@@ -177,7 +184,8 @@ def main():
     feat_codebook_numgroups = feat_codebook.shape[0]
     feat_codebook = torch.nn.ModuleList([torch.nn.Embedding.from_pretrained(feat_codebook[i], freeze=True) for i in range(feat_codebook_numgroups)])
 
-    wavlm = WavLMExtractor(checkpoint=args.wavlm_path, device=device)
+    wavlm_path = os.path.join(args.pretrained_dir, "WavLM-Large.pt")
+    wavlm = WavLMExtractor(checkpoint=wavlm_path, device=device)
 
     # start generation
     with torch.no_grad(), tqdm(utt2path.items(), desc="[prompted recon]") as pbar:
@@ -200,6 +208,9 @@ def main():
 
             # generate
             _, _, embed_index = model.encode(audio)
+            if vocoder_config.get("repeat_input_tokens", False):
+                # in LSCodec-25Hz, we still trained the vocoder on 50Hz input, so repeat_interleave is needed.
+                embed_index = embed_index.repeat_interleave(2, dim=0)
             vqvec = torch.cat([feat_codebook[i](embed_index[:, i]) for i in range(feat_codebook_numgroups)], dim=-1).unsqueeze(0)  # (1, L, D)
             y = vocoder.inference(vqvec, prompt)[-1].view(-1)
 

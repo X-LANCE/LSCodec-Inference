@@ -18,17 +18,22 @@ docker run -it -v /path/to/vec2wav2.0:/workspace cantabilekwok511/vec2wav2.0:v0.
 ```
 
 ## Checkpoints
-Checkpoints can be downloaded from [HuggingFace](https://huggingface.co/cantabile-kwok/lscodec_50hz/tree/main) or [Modelscope](https://modelscope.cn/models/CantabileKwok/lscodec-50hz/summary). You can use this script to automatically download them:
-```
-bash download_ckpt.sh
-```
-This will create `pretrained/` and download the following files:
+Checkpoints can be downloaded from [HuggingFace](https://huggingface.co/cantabile-kwok/lscodec_50hz/tree/main) or [Modelscope](https://modelscope.cn/models/CantabileKwok/lscodec-50hz/summary). 
 
-* `codebook.npy`: the codebook (1, 300, 64) representing the codebook of LSCodec-50Hz.
+We have two versions of LSCodec: 50Hz and 25Hz. 
+You can use this script to automatically download them:
+```
+bash download_ckpt.sh 50hz
+# or bash download_ckpt.sh 25hz
+```
+This will create `pretrained/` (or `pretrained_25hz`, respectively) and download the following files:
+
+* `codebook.npy`: the codebook, (1, 300, 64) for LSCodec-50Hz; (1, 1024, 64) for LSCodec-25Hz.
 * `encoder_config.yml`, `vocoder_config.yml`: configs for the encoder and vocoder, respectively.
 * `lscodec_encoder.pt`, `lscodec_vocoder.pt`: checkpoints for the encoder and vocoder, respectively.
 
-This downloading script will also prompt you to download the WavLM checkpoint manually. Please put this file under `pretrained/` as well.
+This downloading script will also prompt you to download the WavLM checkpoint manually. Please put this file under the pretrained model directory as well.
+If you have a WavLM checkpoint downloaded already, you can also `ln -s` it.
 * `WavLM-Large.pt`: WavLM-Large checkpoint from the [official repo](https://github.com/microsoft/unilm/blob/master/wavlm/README.md).
 
 ## Encoding Waveform to Tokens
@@ -45,7 +50,9 @@ Then, encoding can be done by
 ```bash
 source path.sh
 encode.py --wav-scp example/wav.scp \
-          --outdir example/tokens/
+          --outdir example/tokens/ \
+          --pretrained-dir pretrained/
+# specify pretrained_25hz for 25Hz version.
 ```
 where the tokens are stored in `example/tokens/feats.ark` and `feats.scp`. The `feats.scp` should look like:
 ```
@@ -60,7 +67,9 @@ Once encoded, LSCodec tokens can be vocoded into 24kHz waveforms using
 source path.sh
 decode_wav_prompt.py --feats-scp example/tokens/feats.scp \
     --prompt-wav-scp example/prompt.scp \
-    --outdir example/wav
+    --outdir example/wav \
+    --pretrained-dir pretrained/
+# specify pretrained_25hz for 25Hz version.
 ```
 where `--prompt-wav-scp prompt.scp` specifies the prompt wav for each utterance's token sequence. This `prompt.scp` looks like:
 ```
@@ -75,7 +84,9 @@ If you want to use one script for the encoding and vocoding process together, co
 source path.sh
 recon_with_prompt.py --wav-scp example/wav.scp \
     --prompt-wav-scp example/prompt.scp \
-    --outdir example/wav
+    --outdir example/wav \
+    --pretrained-dir pretrained/
+# specify pretrained_25hz for 25Hz version.
 ```
 
 ## Citation

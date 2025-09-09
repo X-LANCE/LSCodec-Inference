@@ -46,27 +46,28 @@ def main():
         type=str
     )
     parser.add_argument(
-        "--num-frames", 
-        default=None, 
-        type=str
-    )
-    parser.add_argument(
         "--outdir",
         type=str,
         required=True,
         help="directory to save generated speech.",
     )
+    # parser.add_argument(
+    #     "--checkpoint",
+    #     type=str,
+    #     default='pretrained/lscodec_vocoder.pt',
+    #     help="checkpoint file to be loaded.",
+    # )
+    # parser.add_argument(
+    #     "--config",
+    #     default='pretrained/vocoder_config.yml',
+    #     type=str,
+    #     help="yaml format configuration file."
+    # )
     parser.add_argument(
-        "--checkpoint",
+        '--pretrained-dir',
         type=str,
-        default='pretrained/lscodec_vocoder.pt',
-        help="checkpoint file to be loaded.",
-    )
-    parser.add_argument(
-        "--config",
-        default='pretrained/vocoder_config.yml',
-        type=str,
-        help="yaml format configuration file."
+        default='pretrained',
+        help='directory of pretrained models. Should contain WavLM-Large.pt, lscodec_vocoder.pt, vocoder_config.yml',
     )
     parser.add_argument(
         "--verbose",
@@ -99,12 +100,12 @@ def main():
         os.makedirs(args.outdir)
 
     # load config
-    if args.config is None:
-        dirname = os.path.dirname(args.checkpoint)
-        args.config = os.path.join(dirname, "config.yml")
-    with open(args.config) as f:
+    config_path = os.path.join(args.pretrained_dir, "vocoder_config.yml")
+    checkpoint_path = os.path.join(args.pretrained_dir, "lscodec_vocoder.pt")
+    with open(config_path) as f:
         config = yaml.load(f, Loader=yaml.Loader)
     config.update(vars(args))
+    config['vq_codebook'] = os.path.join(args.pretrained_dir, "codebook.npy")  # overwrite
 
     # check arguments
     if args.feats_scp is None:
@@ -117,8 +118,8 @@ def main():
     else:
         device = torch.device("cpu")
         logging.info("Using CPU.")
-    model = load_vocoder(checkpoint=args.checkpoint, config=config)
-    logging.info(f"Loaded model parameters from {args.checkpoint}.")
+    model = load_vocoder(checkpoint=checkpoint_path, config=config)
+    logging.info(f"Loaded model parameters from {checkpoint_path}.")
     model.backend.remove_weight_norm()
     model = model.eval().to(device)
 
@@ -145,6 +146,8 @@ def main():
             prompt = torch.tensor(prompt).unsqueeze(0).to(device)  # (1, L', D')
 
             vqidx = c.long()
+            if config.get("repeat_input_tokens", False):
+                vqidx = vqidx.repeat_interleave(2, dim=0)
             vqvec = torch.cat([feat_codebook[i](vqidx[:, i]) for i in range(feat_codebook_numgroups)], dim=-1).unsqueeze(0)  # (1, L, D)
 
             # generate

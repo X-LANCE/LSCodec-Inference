@@ -47,27 +47,16 @@ def main():
         "you need to specify wav-scp.",
     )
     parser.add_argument(
-        "--num-frames",
-        default=None,
-        type=str
-    )
-    parser.add_argument(
         "--outdir",
         type=str,
         required=True,
         help="directory to save generated speech.",
     )
     parser.add_argument(
-        "--checkpoint",
+        "--pretrained-dir",
         type=str,
-        default='pretrained/lscodec_encoder.pt',
-        help="checkpoint file to be loaded.",
-    )
-    parser.add_argument(
-        "--config",
-        default='pretrained/encoder_config.yml',
-        type=str,
-        help="yaml format configuration file."
+        default="pretrained/",
+        help="directory to save pretrained model. (default=None). It will need to contain lscodec_encoder.pt and encoder_config.yml",
     )
     parser.add_argument(
         "--verbose",
@@ -100,12 +89,12 @@ def main():
         os.makedirs(args.outdir)
 
     # load config
-    if args.config is None:
-        dirname = os.path.dirname(args.checkpoint)
-        args.config = os.path.join(dirname, "config.yml")
-    with open(args.config) as f:
+    config_path = os.path.join(args.pretrained_dir, "encoder_config.yml")
+    checkpoint_path = os.path.join(args.pretrained_dir, "lscodec_encoder.pt")
+    with open(config_path) as f:
         config = yaml.load(f, Loader=yaml.Loader)
     config.update(vars(args))
+    config['pretrain_codebook'] = os.path.join(args.pretrained_dir, "codebook.npy")  # overwrite
 
     # check arguments
     if args.wav_scp is None:
@@ -125,8 +114,8 @@ def main():
     else:
         device = torch.device("cpu")
         logging.info("Using CPU.")
-    model = load_model(config, args.checkpoint)
-    logging.info(f"Loaded model parameters from {args.checkpoint}.")
+    model = load_model(config, checkpoint_path)
+    logging.info(f"Loaded model parameters from {checkpoint_path}.")
     model = model.eval().to(device)
 
     # start generation
