@@ -91,10 +91,13 @@ recon_with_prompt.py --wav-scp example/wav.scp \
 
 ## Citation
 ```bibtex
-@article{guo2024lscodec,
-	author={Yiwei Guo and Zhihan Li and Chenpeng Du and Hankun Wang and Xie Chen and Kai Yu},
-	title={{LSCodec}: Low-Bitrate and Speaker-Decoupled Discrete Speech Codec},
-	journal={arXiv preprint arXiv:2410.15764},
-	year={2024},
+@inproceedings{guo25_interspeech,
+  title     = {{LSCodec: Low-Bitrate and Speaker-Decoupled Discrete Speech Codec}},
+  author    = {Yiwei Guo and Zhihan Li and Chenpeng Du and Hankun Wang and Xie Chen and Kai Yu},
+  year      = {2025},
+  booktitle = {{Interspeech 2025}},
+  pages     = {5018--5022},
+  doi       = {10.21437/Interspeech.2025-1106},
+  issn      = {2958-1796},
 }
 ```
